@@ -1,0 +1,41 @@
+name: mindful_meals
+description: MindfulMeals — Complete App (Phase 1 + 2 + 3)
+publish_to: 'none'
+version: 3.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Fonts & UI
+  google_fonts: ^6.2.1
+  flutter_svg: ^2.0.9
+  cached_network_image: ^3.3.1
+
+  # State Management (Phase 3)
+  flutter_riverpod: ^2.5.1
+
+  # Networking (Phase 3)
+  http: ^1.2.0
+
+  # Local Storage — stores JWT tokens (Phase 3)
+  shared_preferences: ^2.2.2
+
+  # Location — for nearby restaurants (Phase 3)
+  geolocator: ^11.0.0
+
+  # Image picking — for share experience (Phase 3)
+  image_picker: ^1.0.7
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
