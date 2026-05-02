@@ -1,140 +1,14 @@
 import 'package:flutter/material.dart';
+import 'meal_model.dart';
+import 'restaurant_model.dart';
+import 'post_model.dart';
+import 'nutrient_model.dart';
 
-// ─── MODELS ──────────────────────────────────────────────────
-
-class Meal {
-  final String id, title, emoji, description;
-  final String? mood, tag, imageUrl, moodAlignment, quickTip;
-  final int? calories, prepTimeMin;
-  final List<String> moodTags, dietaryTags;
-  final double? aiScore;
-
-  const Meal({
-    required this.id, required this.title, required this.emoji,
-    this.description = '', this.mood, this.tag, this.imageUrl,
-    this.moodAlignment, this.quickTip, this.calories, this.prepTimeMin,
-    this.moodTags = const [], this.dietaryTags = const [],
-    this.aiScore,
-  });
-
-  factory Meal.fromJson(Map<String, dynamic> j) => Meal(
-    id: j['id'] ?? '', title: j['title'] ?? '', emoji: j['emoji'] ?? '🍽️',
-    description: j['description'] ?? '',
-    calories: j['calories'], prepTimeMin: j['prep_time_min'],
-    moodTags: List<String>.from(j['mood_tags'] ?? []),
-    dietaryTags: List<String>.from(j['dietary_tags'] ?? []),
-    imageUrl: j['image_url'],
-    aiScore: (j['ai_score'] as num?)?.toDouble(),
-    moodAlignment: j['mood_alignment'],
-    quickTip: j['quick_tip'],
-  );
-}
-
-class Restaurant {
-  final String id, name, cuisine, address;
-  final double? rating, distanceKm;
-  final int? priceRange;
-  final String? emoji, description, imageUrl, openStatus, moodAlignment;
-  final List<String> moodTags, cuisineTags, menuHighlights;
-  final bool matchesMood;
-  final double? aiScore;
-
-  const Restaurant({
-    required this.id, required this.name, required this.cuisine,
-    this.address = '', this.rating, this.distanceKm, this.priceRange,
-    this.emoji, this.description, this.imageUrl, this.openStatus,
-    this.moodAlignment, this.moodTags = const [],
-    this.cuisineTags = const [], this.menuHighlights = const [],
-    this.matchesMood = false, this.aiScore,
-  });
-
-  factory Restaurant.fromJson(Map<String, dynamic> j) => Restaurant(
-    id: j['id'] ?? '', name: j['name'] ?? '', cuisine: (j['cuisine_tags'] as List?)?.join(' · ') ?? '',
-    address: j['address'] ?? '',
-    rating: (j['rating'] as num?)?.toDouble(),
-    distanceKm: (j['distance_km'] as num?)?.toDouble(),
-    priceRange: j['price_range'],
-    emoji: j['emoji'], description: j['description'],
-    imageUrl: j['image_url'],
-    openStatus: 'Open',
-    moodAlignment: j['mood_alignment'],
-    moodTags: List<String>.from(j['mood_tags'] ?? []),
-    cuisineTags: List<String>.from(j['cuisine_tags'] ?? []),
-    menuHighlights: List<String>.from(j['menu_highlights'] ?? []),
-    matchesMood: j['matches_mood'] ?? false,
-    aiScore: (j['ai_score'] as num?)?.toDouble(),
-  );
-
-  String get priceString    => '\$' * (priceRange ?? 2);
-  String get distanceString => distanceKm != null ? '${distanceKm!.toStringAsFixed(1)} km' : '';
-  double get safeRating     => rating ?? 0.0;
-
-  /// Derives a theme colour from mood tags so screens that use accentColor
-  /// continue to work without requiring a stored colour field.
-  Color get accentColor {
-    if (moodTags.contains('Comfort'))               return const Color(0xFFFF8B6B);
-    if (moodTags.contains('Energized') ||
-        moodTags.contains('Happy'))                 return const Color(0xFFF7C59F);
-    if (moodTags.contains('Focus'))                 return const Color(0xFF6DBF9E);
-    return const Color(0xFF4FACB8); // Calm / default
-  }
-}
-
-enum PostType { recipe, dining }
-
-class CommunityPost {
-  final String id, user, handle, time, dish, avatar;
-  int likes; final int comments;
-  bool liked, saved;
-  final String mood;
-  final PostType postType;
-  final String? moodBefore, moodAfter, restaurantName, note, imageUrl;
-
-  CommunityPost({
-    required this.id, required this.user, required this.handle,
-    required this.time, required this.dish, required this.likes,
-    required this.comments, required this.liked, required this.saved,
-    required this.mood, required this.avatar,
-    this.postType = PostType.recipe,
-    this.moodBefore, this.moodAfter, this.restaurantName, this.note, this.imageUrl,
-  });
-
-  factory CommunityPost.fromJson(Map<String, dynamic> j) {
-    final userMap = j['users'] as Map<String, dynamic>?;
-    return CommunityPost(
-      id: j['id'] ?? '',
-      user: userMap?['name'] ?? 'User',
-      handle: '@${userMap?['handle'] ?? 'user'}',
-      time: _timeAgo(j['created_at']),
-      dish: (j['meals']?['title']) ?? (j['restaurants']?['name']) ?? 'Experience',
-      likes: j['like_count'] ?? 0,
-      comments: j['comment_count'] ?? 0,
-      liked: j['liked'] ?? false,
-      saved: j['saved'] ?? false,
-      mood: j['mood_after'] ?? '',
-      avatar: (userMap?['name'] ?? 'U').split(' ').map((w) => w[0]).take(2).join(),
-      postType: j['post_type'] == 'dining' ? PostType.dining : PostType.recipe,
-      moodBefore: j['mood_before'],
-      moodAfter: j['mood_after'],
-      restaurantName: j['restaurants']?['name'],
-      note: j['note'],
-      imageUrl: j['image_url'],
-    );
-  }
-
-  static String _timeAgo(String? iso) {
-    if (iso == null) return '';
-    final diff = DateTime.now().difference(DateTime.parse(iso));
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    return '${diff.inDays}d ago';
-  }
-}
-
-class NutrientInfo {
-  final String label; final int value, max; final Color color;
-  const NutrientInfo({required this.label, required this.value, required this.max, required this.color});
-}
+export 'meal_model.dart';
+export 'restaurant_model.dart';
+export 'post_model.dart';
+export 'nutrient_model.dart';
+export 'auth_models.dart';
 
 // ─── STATIC MOCK DATA (used when backend not connected) ───────
 

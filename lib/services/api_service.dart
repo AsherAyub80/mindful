@@ -9,6 +9,8 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/app_data.dart';
+import '../core/exceptions.dart';
+import 'package:http_parser/http_parser.dart' as http_parser;
 
 class ApiService {
   // ── CHANGE THIS to your computer's IP when testing on a real phone ──
@@ -201,8 +203,11 @@ class ApiService {
   // ── Posts ────────────────────────────────────────────────────
   static Future<Map<String, dynamic>> getFeed(
           {String type = 'all', String? cursor}) async =>
-      get('/posts/feed',
-          q: {'type': type, if (cursor != null) 'cursor': cursor});
+      get('/posts/feed', q: {
+        'type': type,
+        if (cursor != null) 'cursor': cursor,
+        'limit': '5'
+      });
 
   static Future<Map<String, dynamic>> createPost({
     required String postType,
@@ -213,17 +218,54 @@ class ApiService {
     String? moodBefore,
     String? moodAfter,
     String? orderedItems,
-  }) async =>
-      post('/posts', body: {
-        'post_type': postType,
-        if (mealId != null) 'meal_id': mealId,
-        if (restaurantId != null) 'restaurant_id': restaurantId,
-        if (note != null) 'note': note,
-        if (imageUrl != null) 'image_url': imageUrl,
-        if (moodBefore != null) 'mood_before': moodBefore,
-        if (moodAfter != null) 'mood_after': moodAfter,
-        if (orderedItems != null) 'ordered_items': orderedItems,
-      });
+    File? imageFile,
+  }) async {
+    if (imageFile != null) {
+      final token = await _getToken();
+      final req = http.MultipartRequest('POST', Uri.parse('$baseUrl/posts'));
+      if (token != null) req.headers['Authorization'] = 'Bearer $token';
+
+      req.fields['post_type'] = postType;
+      if (mealId != null) req.fields['meal_id'] = mealId;
+      if (restaurantId != null) req.fields['restaurant_id'] = restaurantId;
+      if (note != null) req.fields['note'] = note;
+      if (moodBefore != null) req.fields['mood_before'] = moodBefore;
+      if (moodAfter != null) req.fields['mood_after'] = moodAfter;
+      if (orderedItems != null) req.fields['ordered_items'] = orderedItems;
+      if (imageUrl != null) req.fields['image_url'] = imageUrl;
+
+      final ext = imageFile.path.split('.').last.toLowerCase();
+      final mimeMap = {
+        'jpg': 'image/jpeg',
+        'jpeg': 'image/jpeg',
+        'png': 'image/png',
+        'webp': 'image/webp',
+        'gif': 'image/gif',
+      };
+      final contentType = mimeMap[ext] ?? 'image/jpeg';
+
+      req.files.add(await http.MultipartFile.fromPath(
+        'image',
+        imageFile.path,
+        contentType: http_parser.MediaType.parse(contentType),
+      ));
+
+      final streamed = await req.send().timeout(timeout);
+      final res = await http.Response.fromStream(streamed);
+      return _parse(res);
+    }
+
+    return post('/posts', body: {
+      'post_type': postType,
+      if (mealId != null) 'meal_id': mealId,
+      if (restaurantId != null) 'restaurant_id': restaurantId,
+      if (note != null) 'note': note,
+      if (imageUrl != null) 'image_url': imageUrl,
+      if (moodBefore != null) 'mood_before': moodBefore,
+      if (moodAfter != null) 'mood_after': moodAfter,
+      if (orderedItems != null) 'ordered_items': orderedItems,
+    });
+  }
 
   static Future<void> likePost(String id) async =>
       post('/posts/$id/like', body: {});
@@ -258,49 +300,4 @@ class ApiService {
     if (res.statusCode == 200) return body['url'] as String;
     return null;
   }
-}
-
-// ── Exception ─────────────────────────────────────────────────
-class ApiException implements Exception {
-  final String message;
-  final int statusCode;
-  final String? code;
-  ApiException({required this.message, required this.statusCode, this.code});
-  bool get isUnauthorized => statusCode == 401;
-}
-
-// ── Response Models ───────────────────────────────────────────
-class AuthResult {
-  final Map<String, dynamic> user;
-  final String accessToken, refreshToken;
-  AuthResult(
-      {required this.user,
-      required this.accessToken,
-      required this.refreshToken});
-  factory AuthResult.fromJson(Map<String, dynamic> j) => AuthResult(
-      user: j['user'],
-      accessToken: j['accessToken'],
-      refreshToken: j['refreshToken']);
-}
-
-class UserProfile {
-  final String id, email, name, handle;
-  final String? avatarUrl, bio;
-  final int streakCount;
-  UserProfile(
-      {required this.id,
-      required this.email,
-      required this.name,
-      required this.handle,
-      this.avatarUrl,
-      this.bio,
-      this.streakCount = 0});
-  factory UserProfile.fromJson(Map<String, dynamic> j) => UserProfile(
-      id: j['id'],
-      email: j['email'],
-      name: j['name'],
-      handle: j['handle'],
-      avatarUrl: j['avatar_url'],
-      bio: j['bio'],
-      streakCount: j['streak_count'] ?? 0);
 }

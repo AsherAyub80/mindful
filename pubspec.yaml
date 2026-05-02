@@ -29,6 +29,7 @@ dependencies:
 
   # Image picking — for share experience (Phase 3)
   image_picker: ^1.0.7
+  http_parser: ^4.1.2
 
 dev_dependencies:
   flutter_test:

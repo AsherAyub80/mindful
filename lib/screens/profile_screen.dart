@@ -5,7 +5,7 @@ import 'package:mindful_meals/services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../models/app_data.dart';
 import '../widgets/glass_widgets.dart';
-import '../providers/app_providers.dart';
+import '../providers/auth_provider.dart';
 
 // ProfileScreen uses ConsumerStatefulWidget so it can:
 //   • read the logged-in user name/handle/streak from authProvider

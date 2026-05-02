@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
-import '../providers/app_providers.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import '../providers/feed_provider.dart';
 import '../theme/app_colors.dart';
 import '../models/app_data.dart';
 import '../widgets/glass_widgets.dart';
@@ -47,16 +48,45 @@ class CommunityScreen extends ConsumerWidget {
                   (ctx, i) {
                     if (i == feedState.posts.length) {
                       if (feedState.hasMore && !feedState.isLoading) {
-                        ref.read(feedProvider.notifier).loadFeed();
+                        // Use microtask to avoid building while fetching
+                        Future.microtask(
+                            () => ref.read(feedProvider.notifier).loadFeed());
                       }
-                      return feedState.isLoading
-                          ? const Padding(
-                              padding: EdgeInsets.all(16),
-                              child: Center(
-                                  child: CircularProgressIndicator(
-                                      color: AppColors.primary,
-                                      strokeWidth: 2)))
-                          : const SizedBox(height: 24);
+
+                      if (feedState.isLoading) {
+                        return const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 32),
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              color: AppColors.primary,
+                              strokeWidth: 2,
+                            ),
+                          ),
+                        );
+                      }
+
+                      if (!feedState.hasMore && feedState.posts.isNotEmpty) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 32),
+                          child: Center(
+                            child: Column(
+                              children: [
+                                const Text('✨', style: TextStyle(fontSize: 24)),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'You\'ve reached the end of the feed',
+                                  style: GoogleFonts.outfit(
+                                    color: AppColors.white50,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+                      return const SizedBox(height: 24);
                     }
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 16),
@@ -345,19 +375,12 @@ class CommunityScreen extends ConsumerWidget {
               if (isSubmitting) return;
               setState(() => isSubmitting = true);
               try {
-                String? imageUrl;
-                if (pickedImage != null) {
-                  imageUrl = await ApiService.uploadImage(
-                    pickedImage!,
-                    type: type == 'recipe' ? 'recipe' : 'post',
-                  );
-                }
                 final post = await ApiService.createPost(
                   postType: type,
                   note: noteCtrl.text.trim().isEmpty
                       ? null
                       : noteCtrl.text.trim(),
-                  imageUrl: imageUrl,
+                  imageFile: pickedImage,
                   moodBefore: moodBefore,
                   moodAfter: moodAfter,
                   orderedItems: type == 'dining' &&
@@ -368,7 +391,8 @@ class CommunityScreen extends ConsumerWidget {
                 ref
                     .read(feedProvider.notifier)
                     .addPost(CommunityPost.fromJson(post['post']));
-              } catch (_) {
+              } catch (e) {
+                print('Error creating post: $e');
                 // Fallback: add local mock post
                 ref.read(feedProvider.notifier).addPost(CommunityPost(
                       id: DateTime.now().toString(),
@@ -717,11 +741,16 @@ class _PostCard extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: post.imageUrl!.startsWith('http')
-                ? Image.network(post.imageUrl!,
+                ? CachedNetworkImage(
+                    imageUrl: post.imageUrl!,
                     height: 180,
                     width: double.infinity,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => _buildImagePlaceholder())
+                    placeholder: (context, url) =>
+                        _buildImagePlaceholder(loading: true),
+                    errorWidget: (context, url, error) =>
+                        _buildImagePlaceholder(),
+                  )
                 : Image.file(File(post.imageUrl!),
                     height: 180,
                     width: double.infinity,
@@ -778,9 +807,10 @@ class _PostCard extends StatelessWidget {
     );
   }
 
-  Widget _buildImagePlaceholder() {
+  Widget _buildImagePlaceholder({bool loading = false}) {
     return Container(
       height: 110,
+      width: double.infinity,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         gradient: LinearGradient(
@@ -790,8 +820,17 @@ class _PostCard extends StatelessWidget {
         ),
       ),
       child: Center(
-        child:
-            Text(isDining ? '🏮' : '🍽️', style: const TextStyle(fontSize: 48)),
+        child: loading
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  color: AppColors.white20,
+                  strokeWidth: 2,
+                ),
+              )
+            : Text(isDining ? '🏮' : '🍽️',
+                style: const TextStyle(fontSize: 48)),
       ),
     );
   }
