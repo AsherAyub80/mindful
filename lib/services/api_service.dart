@@ -12,13 +12,26 @@ import '../models/app_data.dart';
 import '../core/exceptions.dart';
 import 'package:http_parser/http_parser.dart' as http_parser;
 
+// ── Environment Toggle ────────────────────────────────────────
+// Change this ONE value to switch between local dev and production.
+// All URLs are derived from this setting automatically.
+enum AppEnvironment { local, production }
+
+const AppEnvironment currentEnv = AppEnvironment.local;
+
 class ApiService {
-  // ── CHANGE THIS to your computer's IP when testing on a real phone ──
-  // Android emulator → use 10.0.2.2  (maps to your localhost)
-  // iOS simulator    → use localhost
-  // Real device      → use your computer's IP e.g. 192.168.1.10
-  // Production       → use your Render.com URL
-  static const String baseUrl = 'http://10.0.2.2:3000/v1';
+  // ── Base URL — auto-selected by environment ──────────────────
+  // local       → http://10.0.2.2:3000/v1 (Android emulator)
+  // production  → https://backendmindful-production.up.railway.app/v1
+  //
+  // For iOS simulator in local mode, change _localUrl to 'http://localhost:3000/v1'
+  // For real device in local mode, change _localUrl to 'http://YOUR_IP:3000/v1'
+  static const String _localUrl = 'http://10.0.2.2:3000/v1';
+  static const String _prodUrl =
+      'https://backendmindful-production.up.railway.app/';
+
+  static const String baseUrl =
+      currentEnv == AppEnvironment.production ? _prodUrl : _localUrl;
 
   static const Duration timeout = Duration(seconds: 30);
 
