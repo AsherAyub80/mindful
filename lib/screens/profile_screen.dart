@@ -1,3 +1,4 @@
+// lib/screens/profile_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -6,10 +7,8 @@ import '../theme/app_colors.dart';
 import '../models/app_data.dart';
 import '../widgets/glass_widgets.dart';
 import '../providers/auth_provider.dart';
+import 'settings_screen.dart';
 
-// ProfileScreen uses ConsumerStatefulWidget so it can:
-//   • read the logged-in user name/handle/streak from authProvider
-//   • call authProvider.notifier.logout() from the Sign Out button
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
@@ -47,7 +46,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
 
   @override
   Widget build(BuildContext context) {
-    // Live user from backend; falls back to demo values if not connected
     final user = ref.watch(authProvider).user;
 
     return SingleChildScrollView(
@@ -70,7 +68,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
 
   // ── Header ──────────────────────────────────────────────────
   Widget _buildProfileHeader(UserProfile? user) {
-    final name = user?.name ?? 'Alex Rivers';
+    final name   = user?.name   ?? 'Alex Rivers';
     final handle = user?.handle ?? 'alex_mindful';
 
     return GlassCard(
@@ -80,52 +78,41 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         colors: [Color(0x2E4FACB8), Color(0x213DAA7A)],
       ),
       backgroundColor: Colors.transparent,
-      child: Column(
-        children: [
-          // Avatar — show network image if available, else emoji
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: AppColors.emeraldGradient,
-              boxShadow: [
-                BoxShadow(
-                    color: AppColors.primary.withOpacity(0.35), blurRadius: 24)
-              ],
-            ),
-            child: user?.avatarUrl != null
-                ? ClipOval(
-                    child: Image.network(user!.avatarUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const Center(
-                            child: Text('🧘', style: TextStyle(fontSize: 30)))))
-                : const Center(
-                    child: Text('🧘', style: TextStyle(fontSize: 30))),
-          ),
-          const SizedBox(height: 12),
-          Text(name,
-              style: GoogleFonts.playfairDisplay(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700)),
-          const SizedBox(height: 4),
-          Text('@$handle · Member',
-              style: const TextStyle(color: AppColors.white50, fontSize: 13)),
-          const SizedBox(height: 12),
-          const Wrap(
-            spacing: 8,
-            children: [
-              GlassChip(label: '🌱 Plant-Based', color: AppColors.secondary),
-              GlassChip(label: '💧 Hydration Pro', color: AppColors.accent),
+      child: Column(children: [
+        Container(
+          width: 72, height: 72,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: AppColors.emeraldGradient,
+            boxShadow: [
+              BoxShadow(color: AppColors.primary.withOpacity(0.35), blurRadius: 24)
             ],
           ),
-        ],
-      ),
+          child: user?.avatarUrl != null
+              ? ClipOval(
+                  child: Image.network(user!.avatarUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const Center(
+                          child: Text('🧘', style: TextStyle(fontSize: 30)))))
+              : const Center(child: Text('🧘', style: TextStyle(fontSize: 30))),
+        ),
+        const SizedBox(height: 12),
+        Text(name,
+            style: GoogleFonts.playfairDisplay(
+                color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 4),
+        Text('@$handle · Member',
+            style: const TextStyle(color: AppColors.white50, fontSize: 13)),
+        const SizedBox(height: 12),
+        const Wrap(spacing: 8, children: [
+          GlassChip(label: '🌱 Plant-Based', color: AppColors.secondary),
+          GlassChip(label: '💧 Hydration Pro', color: AppColors.accent),
+        ]),
+      ]),
     );
   }
 
-  // ── Stats grid — streak comes from live user data ────────────
+  // ── Stats grid ───────────────────────────────────────────────
   Widget _buildStatsGrid(UserProfile? user) {
     final streak = user?.streakCount ?? 0;
     final stats = [
@@ -142,20 +129,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
             padding: EdgeInsets.only(right: i < 3 ? 8 : 0),
             child: GlassCard(
               padding: const EdgeInsets.symmetric(vertical: 10),
-              child: Column(
-                children: [
-                  Text(s.$1, style: const TextStyle(fontSize: 20)),
-                  const SizedBox(height: 2),
-                  Text(s.$2,
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 14)),
-                  Text(s.$3,
-                      style: const TextStyle(
-                          color: AppColors.white50, fontSize: 10)),
-                ],
-              ),
+              child: Column(children: [
+                Text(s.$1, style: const TextStyle(fontSize: 20)),
+                const SizedBox(height: 2),
+                Text(s.$2,
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14)),
+                Text(s.$3,
+                    style: const TextStyle(color: AppColors.white50, fontSize: 10)),
+              ]),
             ),
           ),
         );
@@ -163,125 +147,134 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     );
   }
 
-  // ── Nutrition bars (animated) ────────────────────────────────
+  // ── Nutrition bars ───────────────────────────────────────────
   Widget _buildNutritionCard() {
     return GlassCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text("Today's Nutrition",
-              style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 15)),
-          const SizedBox(height: 14),
-          ...List.generate(AppData.nutrients.length, (i) {
-            final n = AppData.nutrients[i];
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(n.label,
-                          style: const TextStyle(
-                              color: AppColors.white70, fontSize: 12)),
-                      Text('${n.value} / ${n.max}',
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600)),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(3),
-                    child: Container(
-                      height: 6,
-                      color: AppColors.white10,
-                      child: AnimatedBuilder(
-                        animation: _barAnims[i],
-                        builder: (_, __) => FractionallySizedBox(
-                          widthFactor: _barAnims[i].value,
-                          alignment: Alignment.centerLeft,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                  colors: [n.color, n.color.withOpacity(0.6)]),
-                              borderRadius: BorderRadius.circular(3),
-                            ),
-                          ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text("Today's Nutrition",
+            style: TextStyle(
+                color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15)),
+        const SizedBox(height: 14),
+        ...List.generate(AppData.nutrients.length, (i) {
+          final n = AppData.nutrients[i];
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Column(children: [
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                Text(n.label,
+                    style: const TextStyle(color: AppColors.white70, fontSize: 12)),
+                Text('${n.value} / ${n.max}',
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600)),
+              ]),
+              const SizedBox(height: 4),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(3),
+                child: Container(
+                  height: 6,
+                  color: AppColors.white10,
+                  child: AnimatedBuilder(
+                    animation: _barAnims[i],
+                    builder: (_, __) => FractionallySizedBox(
+                      widthFactor: _barAnims[i].value,
+                      alignment: Alignment.centerLeft,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                              colors: [n.color, n.color.withOpacity(0.6)]),
+                          borderRadius: BorderRadius.circular(3),
                         ),
                       ),
                     ),
                   ),
-                ],
+                ),
               ),
-            );
-          }),
-        ],
-      ),
+            ]),
+          );
+        }),
+      ]),
     );
   }
 
   // ── Preferences ──────────────────────────────────────────────
   Widget _buildPreferences() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('PREFERENCES',
-            style: TextStyle(
-                color: AppColors.white50,
-                fontSize: 11,
-                letterSpacing: 1,
-                fontWeight: FontWeight.w500)),
-        const SizedBox(height: 10),
-        _PrefRow(
-            icon: '🥗', label: 'Dietary', value: 'Plant-Based, Gluten-Free'),
-        _PrefRow(icon: '⚠️', label: 'Allergies', value: 'Tree Nuts, Shellfish'),
-        _PrefRow(
-            icon: '🎯', label: 'Goals', value: 'Weight Balance, Mindfulness'),
-        _PrefRow(
-          icon: '🔔',
-          label: 'Notifications',
-          value: _notifs ? 'Enabled' : 'Disabled',
-          trailing: GestureDetector(
-            onTap: () => setState(() => _notifs = !_notifs),
-            child: AnimatedContainer(
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      // ── Settings & Preferences nav card ──────────────────────
+      GestureDetector(
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const SettingsScreen()),
+        ),
+        child: GlassCard(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          gradient: const LinearGradient(
+            colors: [Color(0x2E4FACB8), Color(0x213DAA7A)],
+          ),
+          backgroundColor: Colors.transparent,
+          child: Row(children: [
+            const Text('⚙️', style: TextStyle(fontSize: 20)),
+            const SizedBox(width: 12),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Text('Settings & Preferences',
+                  style: TextStyle(
+                      color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 1),
+              const Text('Diet, allergies, goals, calories',
+                  style: TextStyle(color: AppColors.white50, fontSize: 11)),
+            ])),
+            const Icon(Icons.chevron_right_rounded,
+                color: AppColors.primary, size: 20),
+          ]),
+        ),
+      ),
+      const SizedBox(height: 16),
+      // ── Section label ─────────────────────────────────────────
+      const Text('PREFERENCES',
+          style: TextStyle(
+              color: AppColors.white50,
+              fontSize: 11,
+              letterSpacing: 1,
+              fontWeight: FontWeight.w500)),
+      const SizedBox(height: 10),
+      _PrefRow(icon: '🥗', label: 'Dietary',       value: 'Plant-Based, Gluten-Free'),
+      _PrefRow(icon: '⚠️', label: 'Allergies',     value: 'Tree Nuts, Shellfish'),
+      _PrefRow(icon: '🎯', label: 'Goals',          value: 'Weight Balance, Mindfulness'),
+      _PrefRow(
+        icon: '🔔',
+        label: 'Notifications',
+        value: _notifs ? 'Enabled' : 'Disabled',
+        trailing: GestureDetector(
+          onTap: () => setState(() => _notifs = !_notifs),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: 44, height: 24,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              color: _notifs ? AppColors.primary : AppColors.white10,
+              border: Border.all(
+                  color: _notifs ? AppColors.primary : AppColors.white20),
+            ),
+            child: AnimatedAlign(
               duration: const Duration(milliseconds: 200),
-              width: 44,
-              height: 24,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                color: _notifs ? AppColors.primary : AppColors.white10,
-                border: Border.all(
-                    color: _notifs ? AppColors.primary : AppColors.white20),
-              ),
-              child: AnimatedAlign(
-                duration: const Duration(milliseconds: 200),
-                alignment:
-                    _notifs ? Alignment.centerRight : Alignment.centerLeft,
-                child: Padding(
-                  padding: const EdgeInsets.all(2),
-                  child: Container(
-                    width: 18,
-                    height: 18,
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(color: Color(0x4D000000), blurRadius: 3)
-                      ],
-                    ),
+              alignment: _notifs ? Alignment.centerRight : Alignment.centerLeft,
+              child: Padding(
+                padding: const EdgeInsets.all(2),
+                child: Container(
+                  width: 18, height: 18,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [BoxShadow(color: Color(0x4D000000), blurRadius: 3)],
                   ),
                 ),
               ),
             ),
           ),
         ),
-      ],
-    );
+      ),
+    ]);
   }
 
   // ── Sign Out ─────────────────────────────────────────────────
@@ -291,7 +284,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
       onTap: isLoading
           ? null
           : () async {
-              // Show confirmation dialog
               final confirmed = await showDialog<bool>(
                 context: context,
                 builder: (ctx) => AlertDialog(
@@ -321,7 +313,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
               );
               if (confirmed == true && mounted) {
                 await ref.read(authProvider.notifier).logout();
-                // AuthGate will automatically redirect to LoginScreen
               }
             },
       width: double.infinity,
@@ -329,8 +320,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
       borderRadius: 16,
       child: isLoading
           ? const SizedBox(
-              width: 20,
-              height: 20,
+              width: 20, height: 20,
               child: CircularProgressIndicator(
                   color: AppColors.coral, strokeWidth: 2))
           : const Text(
@@ -345,16 +335,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   }
 }
 
-// ── Shared preference row widget ─────────────────────────────
+// ── Preference row ───────────────────────────────────────────
 class _PrefRow extends StatelessWidget {
   final String icon, label, value;
   final Widget? trailing;
-
   const _PrefRow(
-      {required this.icon,
-      required this.label,
-      required this.value,
-      this.trailing});
+      {required this.icon, required this.label, required this.value,
+       this.trailing});
 
   @override
   Widget build(BuildContext context) {
@@ -362,29 +349,23 @@ class _PrefRow extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 10),
       child: GlassCard(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        child: Row(
-          children: [
-            Text(icon, style: const TextStyle(fontSize: 20)),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(label,
-                      style: const TextStyle(
-                          color: AppColors.white50, fontSize: 11)),
-                  const SizedBox(height: 1),
-                  Text(value,
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500)),
-                ],
-              ),
-            ),
-            if (trailing != null) trailing!,
-          ],
-        ),
+        child: Row(children: [
+          Text(icon, style: const TextStyle(fontSize: 20)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(label,
+                  style: const TextStyle(color: AppColors.white50, fontSize: 11)),
+              const SizedBox(height: 1),
+              Text(value,
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500)),
+            ]),
+          ),
+          if (trailing != null) trailing!,
+        ]),
       ),
     );
   }

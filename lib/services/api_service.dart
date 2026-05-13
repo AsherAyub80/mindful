@@ -13,22 +13,14 @@ import '../core/exceptions.dart';
 import 'package:http_parser/http_parser.dart' as http_parser;
 
 // ── Environment Toggle ────────────────────────────────────────
-// Change this ONE value to switch between local dev and production.
-// All URLs are derived from this setting automatically.
 enum AppEnvironment { local, production }
 
-const AppEnvironment currentEnv = AppEnvironment.local;
+const AppEnvironment currentEnv = AppEnvironment.production;
 
 class ApiService {
-  // ── Base URL — auto-selected by environment ──────────────────
-  // local       → http://10.0.2.2:3000/v1 (Android emulator)
-  // production  → https://backendmindful-production.up.railway.app/v1
-  //
-  // For iOS simulator in local mode, change _localUrl to 'http://localhost:3000/v1'
-  // For real device in local mode, change _localUrl to 'http://YOUR_IP:3000/v1'
   static const String _localUrl = 'http://10.0.2.2:3000/v1';
   static const String _prodUrl =
-      'https://backendmindful-production.up.railway.app/';
+      'https://backendmindful-production.up.railway.app/v1';
 
   static const String baseUrl =
       currentEnv == AppEnvironment.production ? _prodUrl : _localUrl;
@@ -196,6 +188,11 @@ class ApiService {
   static Future<Map<String, dynamic>> getMealDetail(String id) async =>
       get('/meals/$id');
 
+  /// Natural-language meal search — calls POST /v1/meals/search
+  /// Returns { meals: [...], filters: { mood, maxCalories, dietary, keywords } }
+  static Future<Map<String, dynamic>> searchMeals(String query) async =>
+      post('/meals/search', body: {'query': query});
+
   // ── Restaurants ──────────────────────────────────────────────
   static Future<Map<String, dynamic>> getNearbyRestaurants({
     required double lat,
@@ -284,6 +281,22 @@ class ApiService {
       post('/posts/$id/like', body: {});
   static Future<void> unlikePost(String id) async => delete('/posts/$id/like');
 
+  /// Fetch comments for a post — GET /v1/posts/:id/comments
+  static Future<Map<String, dynamic>> getComments(String postId) async =>
+      get('/posts/$postId/comments');
+
+  /// Add a comment to a post — POST /v1/posts/:id/comments
+  /// Pass [parentId] to create a threaded reply.
+  static Future<Map<String, dynamic>> addComment(
+    String postId,
+    String body, {
+    String? parentId,
+  }) async =>
+      post('/posts/$postId/comments', body: {
+        'body': body,
+        if (parentId != null) 'parent_id': parentId,
+      });
+
   // ── Upload ───────────────────────────────────────────────────
   static Future<String?> uploadImage(File file, {String type = 'post'}) async {
     final token = await _getToken();
@@ -291,7 +304,6 @@ class ApiService {
         'POST', Uri.parse('$baseUrl/uploads/image?type=$type'));
     if (token != null) req.headers['Authorization'] = 'Bearer $token';
 
-    // Detect content type from extension, default to jpeg
     final ext = file.path.split('.').last.toLowerCase();
     final mimeMap = {
       'jpg': 'image/jpeg',
@@ -309,8 +321,8 @@ class ApiService {
     ));
     final streamed = await req.send().timeout(timeout);
     final res = await http.Response.fromStream(streamed);
-    final body = jsonDecode(res.body);
-    if (res.statusCode == 200) return body['url'] as String;
+    final b = jsonDecode(res.body);
+    if (res.statusCode == 200) return b['url'] as String;
     return null;
   }
 }

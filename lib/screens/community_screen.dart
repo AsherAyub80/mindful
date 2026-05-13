@@ -1,3 +1,4 @@
+// lib/screens/community_screen.dart
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +10,7 @@ import '../theme/app_colors.dart';
 import '../models/app_data.dart';
 import '../widgets/glass_widgets.dart';
 import '../services/api_service.dart';
+import 'comments_screen.dart';
 
 class CommunityScreen extends ConsumerWidget {
   const CommunityScreen({super.key});
@@ -48,41 +50,31 @@ class CommunityScreen extends ConsumerWidget {
                   (ctx, i) {
                     if (i == feedState.posts.length) {
                       if (feedState.hasMore && !feedState.isLoading) {
-                        // Use microtask to avoid building while fetching
                         Future.microtask(
                             () => ref.read(feedProvider.notifier).loadFeed());
                       }
-
                       if (feedState.isLoading) {
                         return const Padding(
                           padding: EdgeInsets.symmetric(vertical: 32),
                           child: Center(
                             child: CircularProgressIndicator(
-                              color: AppColors.primary,
-                              strokeWidth: 2,
-                            ),
+                                color: AppColors.primary, strokeWidth: 2),
                           ),
                         );
                       }
-
                       if (!feedState.hasMore && feedState.posts.isNotEmpty) {
                         return Padding(
                           padding: const EdgeInsets.symmetric(vertical: 32),
                           child: Center(
-                            child: Column(
-                              children: [
-                                const Text('✨', style: TextStyle(fontSize: 24)),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'You\'ve reached the end of the feed',
+                            child: Column(children: [
+                              const Text('✨', style: TextStyle(fontSize: 24)),
+                              const SizedBox(height: 8),
+                              Text("You've reached the end of the feed",
                                   style: GoogleFonts.outfit(
-                                    color: AppColors.white50,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
+                                      color: AppColors.white50,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500)),
+                            ]),
                           ),
                         );
                       }
@@ -101,6 +93,16 @@ class CommunityScreen extends ConsumerWidget {
                           ref.read(feedProvider.notifier).state =
                               feedState.copyWith(posts: List.from(posts));
                         },
+                        // ── Wire comments button ──────────────
+                        onComment: () => Navigator.push(
+                          ctx,
+                          MaterialPageRoute(
+                            builder: (_) => CommentsScreen(
+                              postId:   feedState.posts[i].id,
+                              postDish: feedState.posts[i].dish,
+                            ),
+                          ),
+                        ),
                       ),
                     );
                   },
@@ -118,9 +120,7 @@ class CommunityScreen extends ConsumerWidget {
       Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text('Community',
             style: GoogleFonts.playfairDisplay(
-                color: Colors.white,
-                fontSize: 22,
-                fontWeight: FontWeight.w700)),
+                color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700)),
         if (fs.usedMock)
           const Text('Showing demo data — connect backend for live feed',
               style: TextStyle(color: AppColors.white50, fontSize: 10)),
@@ -134,9 +134,7 @@ class CommunityScreen extends ConsumerWidget {
           SizedBox(width: 4),
           Text('Share',
               style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600)),
+                  color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
         ]),
       ),
     ]);
@@ -144,8 +142,8 @@ class CommunityScreen extends ConsumerWidget {
 
   Widget _buildTrending() {
     return GlassCard(
-      gradient:
-          const LinearGradient(colors: [Color(0x2E4FACB8), Color(0x213DAA7A)]),
+      gradient: const LinearGradient(
+          colors: [Color(0x2E4FACB8), Color(0x213DAA7A)]),
       backgroundColor: Colors.transparent,
       child: Row(children: [
         const Text('🔥', style: TextStyle(fontSize: 24)),
@@ -173,14 +171,12 @@ class CommunityScreen extends ConsumerWidget {
               child: Column(children: [
                 Stack(children: [
                   Container(
-                      width: 52,
-                      height: 52,
+                      width: 52, height: 52,
                       decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           gradient: const LinearGradient(
                               colors: [AppColors.primary, AppColors.emerald]),
-                          border:
-                              Border.all(color: AppColors.primary, width: 2)),
+                          border: Border.all(color: AppColors.primary, width: 2)),
                       child: Center(
                           child: Text(p.avatar,
                               style: const TextStyle(
@@ -189,11 +185,9 @@ class CommunityScreen extends ConsumerWidget {
                                   fontSize: 14)))),
                   if (p.postType == PostType.dining)
                     Positioned(
-                        bottom: 0,
-                        right: 0,
+                        bottom: 0, right: 0,
                         child: Container(
-                            width: 18,
-                            height: 18,
+                            width: 18, height: 18,
                             decoration: BoxDecoration(
                                 color: AppColors.bgDark,
                                 shape: BoxShape.circle,
@@ -214,20 +208,16 @@ class CommunityScreen extends ConsumerWidget {
               ]))),
           Column(children: [
             Container(
-                width: 52,
-                height: 52,
+                width: 52, height: 52,
                 decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: AppColors.white10,
-                    border: Border.all(
-                        color: AppColors.white20, style: BorderStyle.solid)),
+                    border: Border.all(color: AppColors.white20)),
                 child: const Center(
                     child: Text('+',
-                        style: TextStyle(
-                            color: AppColors.white50, fontSize: 20)))),
+                        style: TextStyle(color: AppColors.white50, fontSize: 20)))),
             const SizedBox(height: 4),
-            const Text('You',
-                style: TextStyle(color: AppColors.white50, fontSize: 10)),
+            const Text('You', style: TextStyle(color: AppColors.white50, fontSize: 10)),
           ]),
         ]));
   }
@@ -240,7 +230,7 @@ class CommunityScreen extends ConsumerWidget {
         for (final tab in [
           ('all', 'All'),
           ('recipe', '🍳 Recipes'),
-          ('dining', '🍽️ Dining')
+          ('dining', '🍽️ Dining'),
         ])
           Expanded(
               child: GestureDetector(
@@ -258,8 +248,9 @@ class CommunityScreen extends ConsumerWidget {
               child: Text(tab.$2,
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                      color:
-                          current == tab.$1 ? Colors.white : AppColors.white50,
+                      color: current == tab.$1
+                          ? Colors.white
+                          : AppColors.white50,
                       fontSize: 12,
                       fontWeight: current == tab.$1
                           ? FontWeight.w700
@@ -293,7 +284,7 @@ class CommunityScreen extends ConsumerWidget {
                                       width: 120, height: 12, borderRadius: 6),
                                   const SizedBox(height: 4),
                                   SkeletonLoader(
-                                      width: 80, height: 10, borderRadius: 5)
+                                      width: 80, height: 10, borderRadius: 5),
                                 ])
                           ]),
                           const SizedBox(height: 12),
@@ -302,8 +293,7 @@ class CommunityScreen extends ConsumerWidget {
                               height: 100,
                               borderRadius: 12),
                           const SizedBox(height: 10),
-                          SkeletonLoader(
-                              width: 160, height: 14, borderRadius: 7),
+                          SkeletonLoader(width: 160, height: 14, borderRadius: 7),
                         ])),
                   ))),
     );
@@ -311,7 +301,7 @@ class CommunityScreen extends ConsumerWidget {
 
   void _showCreatePost(BuildContext context, WidgetRef ref) {
     String type = 'recipe';
-    final noteCtrl = TextEditingController();
+    final noteCtrl         = TextEditingController();
     final orderedItemsCtrl = TextEditingController();
     File? pickedImage;
     String? moodBefore;
@@ -319,12 +309,8 @@ class CommunityScreen extends ConsumerWidget {
     bool isSubmitting = false;
 
     const moods = [
-      ('😊', 'Happy'),
-      ('🌿', 'Calm'),
-      ('⚡', 'Energized'),
-      ('🤍', 'Comforted'),
-      ('✨', 'Glowing'),
-      ('🎯', 'Focused'),
+      ('😊', 'Happy'), ('🌿', 'Calm'), ('⚡', 'Energized'),
+      ('🤍', 'Comforted'), ('✨', 'Glowing'), ('🎯', 'Focused'),
     ];
 
     showModalBottomSheet(
@@ -347,17 +333,13 @@ class CommunityScreen extends ConsumerWidget {
                   ),
                   child: Column(mainAxisSize: MainAxisSize.min, children: [
                     ListTile(
-                      leading: const Icon(Icons.photo_library,
-                          color: AppColors.primary),
-                      title: const Text('Gallery',
-                          style: TextStyle(color: Colors.white)),
+                      leading: const Icon(Icons.photo_library, color: AppColors.primary),
+                      title: const Text('Gallery', style: TextStyle(color: Colors.white)),
                       onTap: () => Navigator.pop(ctx, ImageSource.gallery),
                     ),
                     ListTile(
-                      leading: const Icon(Icons.camera_alt,
-                          color: AppColors.emerald),
-                      title: const Text('Camera',
-                          style: TextStyle(color: Colors.white)),
+                      leading: const Icon(Icons.camera_alt, color: AppColors.emerald),
+                      title: const Text('Camera', style: TextStyle(color: Colors.white)),
                       onTap: () => Navigator.pop(ctx, ImageSource.camera),
                     ),
                   ]),
@@ -366,9 +348,7 @@ class CommunityScreen extends ConsumerWidget {
               if (source == null) return;
               final picked = await ImagePicker()
                   .pickImage(source: source, maxWidth: 1200, imageQuality: 85);
-              if (picked != null) {
-                setState(() => pickedImage = File(picked.path));
-              }
+              if (picked != null) setState(() => pickedImage = File(picked.path));
             }
 
             Future<void> submitPost() async {
@@ -377,9 +357,7 @@ class CommunityScreen extends ConsumerWidget {
               try {
                 final post = await ApiService.createPost(
                   postType: type,
-                  note: noteCtrl.text.trim().isEmpty
-                      ? null
-                      : noteCtrl.text.trim(),
+                  note: noteCtrl.text.trim().isEmpty ? null : noteCtrl.text.trim(),
                   imageFile: pickedImage,
                   moodBefore: moodBefore,
                   moodAfter: moodAfter,
@@ -388,38 +366,25 @@ class CommunityScreen extends ConsumerWidget {
                       ? orderedItemsCtrl.text.trim()
                       : null,
                 );
-                ref
-                    .read(feedProvider.notifier)
-                    .addPost(CommunityPost.fromJson(post['post']));
+                ref.read(feedProvider.notifier).addPost(
+                    CommunityPost.fromJson(post['post']));
               } catch (e) {
-                print('Error creating post: $e');
-                // Fallback: add local mock post
                 ref.read(feedProvider.notifier).addPost(CommunityPost(
-                      id: DateTime.now().toString(),
-                      user: 'You',
-                      handle: '@you',
-                      time: 'Just now',
-                      dish:
-                          'Your ${type == "recipe" ? "Recipe" : "Experience"}',
-                      likes: 0,
-                      comments: 0,
-                      liked: false,
-                      saved: false,
-                      mood: moodAfter ?? '',
-                      avatar: 'ME',
-                      postType:
-                          type == 'dining' ? PostType.dining : PostType.recipe,
-                      note: noteCtrl.text,
-                      moodBefore: moodBefore,
-                      moodAfter: moodAfter,
-                      imageUrl: pickedImage?.path,
-                    ));
+                  id: DateTime.now().toString(),
+                  user: 'You', handle: '@you', time: 'Just now',
+                  dish: 'Your ${type == "recipe" ? "Recipe" : "Experience"}',
+                  likes: 0, comments: 0,
+                  liked: false, saved: false,
+                  mood: moodAfter ?? '', avatar: 'ME',
+                  postType: type == 'dining' ? PostType.dining : PostType.recipe,
+                  note: noteCtrl.text, moodBefore: moodBefore, moodAfter: moodAfter,
+                  imageUrl: pickedImage?.path,
+                ));
               }
               if (ctx.mounted) Navigator.pop(ctx);
             }
 
-            Widget buildMoodChips(
-                String? selected, void Function(String) onSelect,
+            Widget buildMoodChips(String? selected, void Function(String) onSelect,
                 {bool isAfter = false}) {
               return Wrap(spacing: 8, runSpacing: 8, children: [
                 for (final m in moods)
@@ -427,8 +392,7 @@ class CommunityScreen extends ConsumerWidget {
                     onTap: () => onSelect('${m.$1} ${m.$2}'),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
                         gradient: selected == '${m.$1} ${m.$2}'
                             ? LinearGradient(
@@ -436,9 +400,7 @@ class CommunityScreen extends ConsumerWidget {
                                     ? [AppColors.emerald, AppColors.primary]
                                     : [AppColors.primary, AppColors.deep])
                             : null,
-                        color: selected == '${m.$1} ${m.$2}'
-                            ? null
-                            : AppColors.white10,
+                        color: selected == '${m.$1} ${m.$2}' ? null : AppColors.white10,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: selected == '${m.$1} ${m.$2}'
@@ -449,12 +411,10 @@ class CommunityScreen extends ConsumerWidget {
                       child: Text('${m.$1} ${m.$2}',
                           style: TextStyle(
                             color: selected == '${m.$1} ${m.$2}'
-                                ? Colors.white
-                                : AppColors.white70,
+                                ? Colors.white : AppColors.white70,
                             fontSize: 12,
                             fontWeight: selected == '${m.$1} ${m.$2}'
-                                ? FontWeight.w600
-                                : FontWeight.w400,
+                                ? FontWeight.w600 : FontWeight.w400,
                           )),
                     ),
                   ),
@@ -471,13 +431,11 @@ class CommunityScreen extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(28),
               ),
               child: Column(mainAxisSize: MainAxisSize.min, children: [
-                // Handle bar + title
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
                   child: Column(children: [
                     Container(
-                      width: 40,
-                      height: 4,
+                      width: 40, height: 4,
                       decoration: BoxDecoration(
                           color: AppColors.white20,
                           borderRadius: BorderRadius.circular(2)),
@@ -490,41 +448,35 @@ class CommunityScreen extends ConsumerWidget {
                             fontWeight: FontWeight.w700)),
                   ]),
                 ),
-                // Scrollable content
                 Flexible(
                   child: SingleChildScrollView(
                     padding: EdgeInsets.fromLTRB(
                         20, 16, 20, MediaQuery.of(ctx).viewInsets.bottom + 20),
                     child: Column(mainAxisSize: MainAxisSize.min, children: [
-                      // ── Type selector ──
+                      // Type selector
                       Row(children: [
                         for (final t in [
-                          ('recipe', '🍳', 'Recipe', AppColors.emerald),
+                          ('recipe', '🍳', 'Recipe',     AppColors.emerald),
                           ('dining', '🍽️', 'Dining Out', AppColors.primary),
                         ])
                           Expanded(
                               child: Padding(
-                            padding: EdgeInsets.only(
-                                right: t.$1 == 'recipe' ? 8 : 0),
+                            padding: EdgeInsets.only(right: t.$1 == 'recipe' ? 8 : 0),
                             child: GestureDetector(
                               onTap: () => setState(() => type = t.$1),
                               child: AnimatedContainer(
                                 duration: const Duration(milliseconds: 200),
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 12),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
                                 decoration: BoxDecoration(
                                   color: type == t.$1
                                       ? t.$4.withOpacity(0.25)
                                       : AppColors.white10,
                                   border: Border.all(
-                                      color: type == t.$1
-                                          ? t.$4
-                                          : AppColors.white15),
+                                      color: type == t.$1 ? t.$4 : AppColors.white15),
                                   borderRadius: BorderRadius.circular(14),
                                 ),
                                 child: Column(children: [
-                                  Text(t.$2,
-                                      style: const TextStyle(fontSize: 24)),
+                                  Text(t.$2, style: const TextStyle(fontSize: 24)),
                                   const SizedBox(height: 4),
                                   Text(t.$3,
                                       style: const TextStyle(
@@ -538,7 +490,7 @@ class CommunityScreen extends ConsumerWidget {
                       ]),
                       const SizedBox(height: 16),
 
-                      // ── Image picker ──
+                      // Image picker
                       GestureDetector(
                         onTap: pickedImage != null
                             ? () => setState(() => pickedImage = null)
@@ -554,26 +506,21 @@ class CommunityScreen extends ConsumerWidget {
                                   ? AppColors.primary.withOpacity(0.4)
                                   : AppColors.white20,
                             ),
-                            color:
-                                pickedImage != null ? null : AppColors.white10,
+                            color: pickedImage != null ? null : AppColors.white10,
                           ),
                           child: pickedImage != null
                               ? ClipRRect(
                                   borderRadius: BorderRadius.circular(15),
                                   child: Stack(children: [
                                     Positioned.fill(
-                                        child: Image.file(pickedImage!,
-                                            fit: BoxFit.cover)),
+                                        child: Image.file(pickedImage!, fit: BoxFit.cover)),
                                     Positioned(
-                                      top: 8,
-                                      right: 8,
+                                      top: 8, right: 8,
                                       child: Container(
                                         padding: const EdgeInsets.all(4),
                                         decoration: BoxDecoration(
-                                          color: Colors.black54,
-                                          borderRadius:
-                                              BorderRadius.circular(20),
-                                        ),
+                                            color: Colors.black54,
+                                            borderRadius: BorderRadius.circular(20)),
                                         child: const Icon(Icons.close,
                                             color: Colors.white, size: 18),
                                       ),
@@ -583,19 +530,18 @@ class CommunityScreen extends ConsumerWidget {
                               : const Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                      Icon(Icons.add_photo_alternate_rounded,
-                                          color: AppColors.white50, size: 22),
-                                      SizedBox(width: 8),
-                                      Text('Add a photo',
-                                          style: TextStyle(
-                                              color: AppColors.white50,
-                                              fontSize: 13)),
-                                    ]),
+                                    Icon(Icons.add_photo_alternate_rounded,
+                                        color: AppColors.white50, size: 22),
+                                    SizedBox(width: 8),
+                                    Text('Add a photo',
+                                        style: TextStyle(
+                                            color: AppColors.white50, fontSize: 13)),
+                                  ]),
                         ),
                       ),
                       const SizedBox(height: 16),
 
-                      // ── Dining: ordered items ──
+                      // Ordered items (dining only)
                       if (type == 'dining') ...[
                         const _SheetLabel(text: '🍜 What did you order?'),
                         const SizedBox(height: 8),
@@ -604,8 +550,7 @@ class CommunityScreen extends ConsumerWidget {
                               horizontal: 14, vertical: 4),
                           child: TextField(
                             controller: orderedItemsCtrl,
-                            style: const TextStyle(
-                                color: Colors.white, fontSize: 14),
+                            style: const TextStyle(color: Colors.white, fontSize: 14),
                             decoration: const InputDecoration(
                               border: InputBorder.none,
                               hintText: 'e.g. Matcha Bowl, Miso Soup...',
@@ -617,22 +562,21 @@ class CommunityScreen extends ConsumerWidget {
                         const SizedBox(height: 16),
                       ],
 
-                      // ── Mood before ──
+                      // Mood before
                       const _SheetLabel(text: '😶 Mood Before'),
                       const SizedBox(height: 8),
-                      buildMoodChips(
-                          moodBefore, (v) => setState(() => moodBefore = v)),
+                      buildMoodChips(moodBefore,
+                          (v) => setState(() => moodBefore = v)),
                       const SizedBox(height: 16),
 
-                      // ── Mood after ──
+                      // Mood after
                       const _SheetLabel(text: '✨ Mood After'),
                       const SizedBox(height: 8),
-                      buildMoodChips(
-                          moodAfter, (v) => setState(() => moodAfter = v),
-                          isAfter: true),
+                      buildMoodChips(moodAfter,
+                          (v) => setState(() => moodAfter = v), isAfter: true),
                       const SizedBox(height: 16),
 
-                      // ── Note ──
+                      // Note
                       const _SheetLabel(text: '📝 Add a note'),
                       const SizedBox(height: 8),
                       GlassCard(
@@ -641,12 +585,10 @@ class CommunityScreen extends ConsumerWidget {
                         child: TextField(
                           controller: noteCtrl,
                           maxLines: 3,
-                          style: const TextStyle(
-                              color: Colors.white, fontSize: 14),
+                          style: const TextStyle(color: Colors.white, fontSize: 14),
                           decoration: const InputDecoration(
                             border: InputBorder.none,
-                            hintText:
-                                'Share how this experience made you feel...',
+                            hintText: 'Share how this experience made you feel...',
                             hintStyle: TextStyle(
                                 color: AppColors.white50, fontSize: 13),
                           ),
@@ -654,7 +596,7 @@ class CommunityScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 20),
 
-                      // ── Submit ──
+                      // Submit
                       NeuButton(
                         active: !isSubmitting,
                         width: double.infinity,
@@ -663,11 +605,9 @@ class CommunityScreen extends ConsumerWidget {
                         onTap: isSubmitting ? null : () => submitPost(),
                         child: isSubmitting
                             ? const SizedBox(
-                                height: 20,
-                                width: 20,
+                                height: 20, width: 20,
                                 child: CircularProgressIndicator(
-                                    color: Colors.white, strokeWidth: 2),
-                              )
+                                    color: Colors.white, strokeWidth: 2))
                             : const Text('Share with Community',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
@@ -685,11 +625,15 @@ class CommunityScreen extends ConsumerWidget {
   }
 }
 
+// ── Post card ────────────────────────────────────────────────
 class _PostCard extends StatelessWidget {
   final CommunityPost post;
-  final VoidCallback onLike, onSave;
+  final VoidCallback onLike, onSave, onComment;
   const _PostCard(
-      {required this.post, required this.onLike, required this.onSave});
+      {required this.post,
+       required this.onLike,
+       required this.onSave,
+       required this.onComment});
   bool get isDining => post.postType == PostType.dining;
 
   @override
@@ -703,8 +647,7 @@ class _PostCard extends StatelessWidget {
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           Container(
-              width: 40,
-              height: 40,
+              width: 40, height: 40,
               decoration: const BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: LinearGradient(
@@ -717,18 +660,13 @@ class _PostCard extends StatelessWidget {
                           fontSize: 14)))),
           const SizedBox(width: 10),
           Expanded(
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                Text(post.user,
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14)),
-                Text('${post.handle} · ${post.time}',
-                    style: const TextStyle(
-                        color: AppColors.white50, fontSize: 11)),
-              ])),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(post.user,
+                style: const TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
+            Text('${post.handle} · ${post.time}',
+                style: const TextStyle(color: AppColors.white50, fontSize: 11)),
+          ])),
           PillBadge(
               label: isDining ? '🍽️ Dining Out' : '🍳 Recipe',
               bgColor: isDining
@@ -752,9 +690,7 @@ class _PostCard extends StatelessWidget {
                         _buildImagePlaceholder(),
                   )
                 : Image.file(File(post.imageUrl!),
-                    height: 180,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
+                    height: 180, width: double.infinity, fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) => _buildImagePlaceholder()),
           )
         else
@@ -762,9 +698,7 @@ class _PostCard extends StatelessWidget {
         const SizedBox(height: 12),
         Text(post.dish,
             style: GoogleFonts.playfairDisplay(
-                color: Colors.white,
-                fontSize: 15,
-                fontWeight: FontWeight.w600)),
+                color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600)),
         if (isDining && post.moodBefore != null && post.moodAfter != null) ...[
           const SizedBox(height: 8),
           GlassCard(
@@ -774,7 +708,7 @@ class _PostCard extends StatelessWidget {
                 const Text('Mood',
                     style: TextStyle(color: AppColors.white50, fontSize: 10)),
                 const SizedBox(width: 8),
-                MoodArrow(before: post.moodBefore!, after: post.moodAfter!)
+                MoodArrow(before: post.moodBefore!, after: post.moodAfter!),
               ])),
         ],
         if (post.note != null && post.note!.isNotEmpty) ...[
@@ -790,14 +724,16 @@ class _PostCard extends StatelessWidget {
         const Divider(color: AppColors.white10, height: 1),
         const SizedBox(height: 10),
         Row(children: [
-          Expanded(
-              child: _Btn(
-                  icon: post.liked ? '❤️' : '🤍',
-                  label: '${post.likes}',
-                  onTap: onLike)),
+          Expanded(child: _Btn(
+              icon: post.liked ? '❤️' : '🤍',
+              label: '${post.likes}',
+              onTap: onLike)),
           const SizedBox(width: 8),
-          Expanded(
-              child: _Btn(icon: '💬', label: '${post.comments}', onTap: () {})),
+          // ── Comment button — now navigates to CommentsScreen ──
+          Expanded(child: _Btn(
+              icon: '💬',
+              label: '${post.comments}',
+              onTap: onComment)),
           const SizedBox(width: 8),
           _Btn(icon: post.saved ? '🔖' : '📌', onTap: onSave),
           const SizedBox(width: 8),
@@ -809,8 +745,7 @@ class _PostCard extends StatelessWidget {
 
   Widget _buildImagePlaceholder({bool loading = false}) {
     return Container(
-      height: 110,
-      width: double.infinity,
+      height: 110, width: double.infinity,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         gradient: LinearGradient(
@@ -822,13 +757,9 @@ class _PostCard extends StatelessWidget {
       child: Center(
         child: loading
             ? const SizedBox(
-                width: 24,
-                height: 24,
+                width: 24, height: 24,
                 child: CircularProgressIndicator(
-                  color: AppColors.white20,
-                  strokeWidth: 2,
-                ),
-              )
+                    color: AppColors.white20, strokeWidth: 2))
             : Text(isDining ? '🏮' : '🍽️',
                 style: const TextStyle(fontSize: 48)),
       ),
@@ -841,6 +772,7 @@ class _Btn extends StatelessWidget {
   final String? label;
   final VoidCallback onTap;
   const _Btn({required this.icon, this.label, required this.onTap});
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -860,7 +792,7 @@ class _Btn extends StatelessWidget {
                   const SizedBox(width: 5),
                   Text(label!,
                       style: const TextStyle(
-                          color: AppColors.white70, fontSize: 13))
+                          color: AppColors.white70, fontSize: 13)),
                 ],
               ]),
         ));
