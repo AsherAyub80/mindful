@@ -68,4 +68,4 @@ lib/
 | `smooth_page_indicator` | Page dots |
 | `lottie` | Animation support |
 
-.
+..
