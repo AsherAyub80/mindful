@@ -67,3 +67,5 @@ lib/
 | `percent_indicator` | Progress indicators |
 | `smooth_page_indicator` | Page dots |
 | `lottie` | Animation support |
+
+.
